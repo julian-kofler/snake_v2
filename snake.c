@@ -4,7 +4,6 @@
 #include <time.h>
 #include <unistd.h>
 
-
 enum content
 {
     Border = '#',
@@ -25,7 +24,7 @@ struct field
 struct field newField(int x, int y)
 {
     struct field ret = {
-        .arr = (int **) calloc(x, sizeof(int *)),
+        .arr = (int **)calloc(x, sizeof(int *)),
         .width = x,
         .height = y,
         .dx = 1,
@@ -39,41 +38,33 @@ struct field newField(int x, int y)
     return ret;
 }
 
-enum move
+void getMove(struct field *field) // Read Input
 {
-    Up,
-    Down,
-    Left,
-    Right,
-};
-enum move getMove(void) // Read Input
-{
-    char input = 0; //getInput();
-
+    char input;
+    scanf(" %c",&input);
     switch (input)
     {
     case 'w':
-        return Up;
+        field->dx = 0;
+        field->dy = -1;
         break;
     case 's':
-        return Down;
+        field->dx = 0;
+        field->dy = 1;
         break;
     case 'a':
-        return Left;
+        field->dx = -1;
+        field->dy = 0;
         break;
     case 'd':
-        return Right;
+        field->dx = 1;
+        field->dy = 0;
         break;
     default:
-        printf("\a");//Piepst
-        return getMove();
+        printf("\a"); // Piepst
+        return getMove(field);
         break;
     }
-}
-
-void moveSnake(struct field *field) // bewegt die Schlange
-{
-
 }
 void printField(struct field *field) // Zeichnet das spielfeld
 {
@@ -112,21 +103,53 @@ void createBorder(struct field *field) // Malt den Rand
 }
 void createFood(struct field *field) // erschafft essen
 {
-
 }
+void moveSnake(struct field *field)
+{
+    int Xnext, Ynext;
+    for (int y = 0; y < field->height; y++)
+    {
+        for (int x = 0; x < field->width; x++)
+        {
+            if (field->arr[x][y] == Snake_head)
+            {
+                Xnext = x + field->dx;
+                Ynext = y + field->dy;
 
+                if (field->arr[Xnext][Ynext] == Empty)
+                {
+                    field->arr[Xnext][Ynext] = Snake_head;
+                    field->arr[x][y] = Empty;
+                    break;
+                }
+                if (field->arr[Xnext][Ynext] == Food)
+                {
+                    field->arr[Xnext][Ynext] = Snake_head;
+                    field->arr[x][y] = Snake_tail;
+                    break;
+                }
+                field->lost = true;
+            }
+        }
+    }
+}
 int main(int argc, char const *argv[])
 {
-    struct field spielfeld = newField(80, 30);
+    struct field spielfeld = newField(80, 15);
+    clearField(&spielfeld);
     createBorder(&spielfeld);
     createFood(&spielfeld);
     printField(&spielfeld);
 
+    spielfeld.arr[10][10] = Snake_head;
+
     while (!spielfeld.lost)
     {
+        getMove(&spielfeld);
+        moveSnake(&spielfeld);
 
         printField(&spielfeld);
-        usleep(100*1000);      // 500 ms delay
+        usleep(50 * 1000); // 50 ms delay
     }
 
     return 0;
