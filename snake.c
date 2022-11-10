@@ -103,6 +103,7 @@ void createBorder(struct field *field) // Malt den Rand
 }
 void createFood(struct field *field) // erschafft essen
 {
+    field->arr[7][7] = Food;
 }
 void moveSnake(struct field *field)
 {
@@ -149,7 +150,7 @@ int main(int argc, char const *argv[])
         moveSnake(&spielfeld);
 
         printField(&spielfeld);
-        usleep(50 * 1000); // 50 ms delay
+        usleep(500 * 1000); // 50 ms delay
     }
 
     return 0;
