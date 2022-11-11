@@ -41,7 +41,7 @@ struct field newField(int x, int y)
 void getMove(struct field *field) // Read Input
 {
     char input;
-    scanf(" %c",&input);
+    scanf(" %c", &input);
     switch (input)
     {
     case 'w':
@@ -117,19 +117,20 @@ void moveSnake(struct field *field)
                 Xnext = x + field->dx;
                 Ynext = y + field->dy;
 
-                if (field->arr[Xnext][Ynext] == Empty)
+                switch (field->arr[Xnext][Ynext])
                 {
+                case Empty:
                     field->arr[Xnext][Ynext] = Snake_head;
                     field->arr[x][y] = Empty;
                     break;
-                }
-                if (field->arr[Xnext][Ynext] == Food)
-                {
+                case Food:
                     field->arr[Xnext][Ynext] = Snake_head;
                     field->arr[x][y] = Snake_tail;
                     break;
+                default:
+                    field->lost = true;
+                    break;
                 }
-                field->lost = true;
             }
         }
     }
