@@ -63,6 +63,7 @@ void setDxDy(struct field *field, int dx, int dy)
             switch (field->arr[x][y].content)
             {
             case Snake_tail:
+                break;
             case Snake_head:
                 field->arr[x][y].dx = dx;
                 field->arr[x][y].dy = dy;
@@ -100,14 +101,20 @@ void getMove(struct field *field) // Read Input
 void printField(struct field *field) // Zeichnet das spielfeld
 {
     system("clear");
+    int n = field->height * field->width + field->height + 1;
+    char *ausgabe = (char *)calloc(n, sizeof(char));
+
+    int i=0;
     for (int y = 0; y < field->height; y++)
     {
         for (int x = 0; x < field->width; x++)
         {
-            printf("%c", field->arr[x][y].content);
+            ausgabe[i++] = field->arr[x][y].content;
         }
-        printf("\n");
+        ausgabe[i++] = '\n';
     }
+    printf("%s",ausgabe);
+    free(ausgabe);
 }
 void clearField(struct field *field) // clears Field without Borders
 {
@@ -126,12 +133,22 @@ void createBorder(struct field *field) // Malt den Rand
     for (int x = 0; x < field->width; x++)
     {
         field->arr[x][0].content = Border;
+        field->arr[x][0].dx = 0;
+        field->arr[x][0].dy = 0;
+
         field->arr[x][field->height - 1].content = Border;
+        field->arr[x][field->height - 1].dx = 0;
+        field->arr[x][field->height - 1].dy = 0;
     }
     for (int y = 0; y < field->height; y++)
     {
         field->arr[0][y].content = Border;
+        field->arr[0][y].dx = 0;
+        field->arr[0][y].dy = 0;
+
         field->arr[field->width - 1][y].content = Border;
+        field->arr[field->width - 1][y].dx = 0;
+        field->arr[field->width - 1][y].dy = 0;
     }
 }
 void createFood(struct field *field) // erschafft essen
@@ -147,6 +164,7 @@ void moveAll(struct field *field)
             int
                 x_next = x + field->arr[x][y].dx,
                 y_next = y + field->arr[x][y].dy;
+
             if (x == x_next && y == y_next) // Wenn die Position sich nicht ändert.
             {
                 continue;
@@ -155,21 +173,51 @@ void moveAll(struct field *field)
             {
                 continue;
             }
+            if (field->arr[x][y].updated)
+            {
+                continue;
+            }
             if (!isInField(field, x_next, y_next)) // Falls außer Spielfeld bricht ab
             {
                 field->lost = 1;
                 break;
             }
-            switch (field->arr[x_next][y_next].content)
+
+            switch (field->arr[x][y].content)
             {
-            case Food:
-            case Empty:
-                field->arr[x_next][y_next].content = field->arr[x][y].content;
-                field->arr[x][y].content = Empty;
-                field->arr[x_next][y_next].updated = true;
+            case Snake_head:
+                switch (field->arr[x_next][y_next].content)
+                {
+                case Empty:
+                    field->arr[x_next][y_next].content = field->arr[x][y].content;
+                    field->arr[x_next][y_next].dx = field->arr[x][y].dx;
+                    field->arr[x_next][y_next].dy = field->arr[x][y].dy;
+
+                    field->arr[x][y].content = Empty;
+                    field->arr[x][y].dx = 0;
+                    field->arr[x][y].dy = 0;
+
+                    field->arr[x_next][y_next].updated = true;
+                    break;
+                case Food:
+                    field->arr[x_next][y_next].content = field->arr[x][y].content;
+                    field->arr[x_next][y_next].dx = field->arr[x][y].dx;
+                    field->arr[x_next][y_next].dy = field->arr[x][y].dy;
+
+                    field->arr[x][y].content = Snake_tail;
+
+                    field->arr[x_next][y_next].updated = true;
+                    field->arr[x][y].updated = true;
+                    break;
+                default:
+                    field->lost = 1;
+                    break;
+                }
+                break;
+            case Snake_tail:
+
                 break;
             default:
-                field->lost = 1;
                 break;
             }
         }
