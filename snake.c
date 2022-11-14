@@ -4,6 +4,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "functions.h"
+
 enum content
 {
     Border = '#',
@@ -41,7 +43,8 @@ struct field newField(int x, int y)
 void getMove(struct field *field) // Read Input
 {
     char input;
-    scanf(" %c", &input);
+    input = getchar();
+    //scanf(" %c", &input);
     switch (input)
     {
     case 'w':
@@ -108,9 +111,10 @@ void createFood(struct field *field) // erschafft essen
 void moveSnake(struct field *field)
 {
     int Xnext, Ynext;
-    for (int y = 0; y < field->height; y++)
+    int fertig = 0;
+    for (int y = 0; (!fertig) && (y < field->height); y++)
     {
-        for (int x = 0; x < field->width; x++)
+        for (int x = 0; (!fertig) && (x < field->width); x++)
         {
             if (field->arr[x][y] == Snake_head)
             {
@@ -122,13 +126,19 @@ void moveSnake(struct field *field)
                 case Empty:
                     field->arr[Xnext][Ynext] = Snake_head;
                     field->arr[x][y] = Empty;
+
+                    fertig = 1;
                     break;
                 case Food:
                     field->arr[Xnext][Ynext] = Snake_head;
                     field->arr[x][y] = Snake_tail;
+
+                    fertig = 1;
                     break;
                 default:
                     field->lost = true;
+
+                    fertig = 1;
                     break;
                 }
             }
@@ -143,11 +153,15 @@ int main(int argc, char const *argv[])
     createFood(&spielfeld);
     printField(&spielfeld);
 
-    spielfeld.arr[10][10] = Snake_head;
+    spielfeld.arr[5][5] = Snake_head;
 
     while (!spielfeld.lost)
     {
-        getMove(&spielfeld);
+        if (kbhit())
+        {
+            getMove(&spielfeld);
+        }
+        
         moveSnake(&spielfeld);
 
         printField(&spielfeld);
