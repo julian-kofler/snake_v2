@@ -142,59 +142,22 @@ void createFood(struct field *field) // erschafft essen
 {
     field->arr[7][7].content = Food;
 }
-/*void moveSnake(struct field *field)
-{
-    int Xnext, Ynext;
-    int fertig = 0;
-    for (int y = 0; (!fertig) && (y < field->height); y++)
-    {
-        for (int x = 0; (!fertig) && (x < field->width); x++)
-        {
-            if (field->arr[x][y].content == Snake_head)
-            {
-                Xnext = x + field->dx;
-                Ynext = y + field->dy;
-
-                switch (field->arr[Xnext][Ynext])
-                {
-                case Empty:
-                    field->arr[Xnext][Ynext] = Snake_head;
-                    field->arr[x][y] = Empty;
-
-                    fertig = 1;
-                    break;
-                case Food:
-                    field->arr[Xnext][Ynext] = Snake_head;
-                    field->arr[x][y] = Snake_tail;
-
-                    fertig = 1;
-                    break;
-                default:
-                    field->lost = true;
-
-                    fertig = 1;
-                    break;
-                }
-            }
-        }
-    }
-}*/
 void moveAll(struct field *field)
 {
-    for (int y = 0; y < field->height; y++)
+    for (int y = 1; y < field->height-1; y++)
     {
-        for (int x = 0; x < field->width; x++)
+        for (int x = 1; x < field->width-1; x++)
         {
             int
                 x_next = x + field->arr[x][y].dx,
                 y_next = y + field->arr[x][y].dy;
 
-            if (!isInField(field, x_next, y_next))
+            if (!isInField(field, x_next, y_next)) //Falls außer Spielfeld bricht ab
             {
                 field->lost = 1;
                 break;
             }
-            if (x == x_next && y == y_next)
+            if (x == x_next && y == y_next) //Wenn die Position sich nicht ändert.
             {
                 continue;
             }
@@ -202,6 +165,7 @@ void moveAll(struct field *field)
             if (field->arr[x_next][y_next].content == Empty)
             {
                 field->arr[x_next][y_next].content == field->arr[x][y].content;
+                field->arr[x][y].content = Empty;
             }
             else
             {
@@ -220,7 +184,7 @@ int main(int argc, char const *argv[])
     printField(&spielfeld);
 
     spielfeld.arr[5][5].content = Snake_head;
-    spielfeld.arr[5][5].dx = 1;
+    spielfeld.arr[5][5].dx = -1;
 
     while (!spielfeld.lost)
     {
