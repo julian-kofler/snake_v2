@@ -19,6 +19,7 @@ struct entity
     enum content content;
     int dx; // geschwindigkeit in x-Richtung
     int dy; // geschwindigkeit in y-Richtung
+    bool updated;
 };
 struct field
 {
@@ -61,8 +62,8 @@ void setDxDy(struct field *field, int dx, int dy)
         {
             switch (field->arr[x][y].content)
             {
-            case Snake_head:
             case Snake_tail:
+            case Snake_head:
                 field->arr[x][y].dx = dx;
                 field->arr[x][y].dy = dy;
                 break;
@@ -76,11 +77,6 @@ void getMove(struct field *field) // Read Input
 {
     char input;
     input = getchar();
-    // scanf(" %c", &input);
-
-    int
-        headX = 0,
-        headY = 0;
     switch (input)
     {
     case 'w':
@@ -144,33 +140,45 @@ void createFood(struct field *field) // erschafft essen
 }
 void moveAll(struct field *field)
 {
-    for (int y = 1; y < field->height-1; y++)
+    for (int y = 1; y < field->height - 1; y++)
     {
-        for (int x = 1; x < field->width-1; x++)
+        for (int x = 1; x < field->width - 1; x++)
         {
             int
                 x_next = x + field->arr[x][y].dx,
                 y_next = y + field->arr[x][y].dy;
-
-            if (!isInField(field, x_next, y_next)) //Falls außer Spielfeld bricht ab
+            if (x == x_next && y == y_next) // Wenn die Position sich nicht ändert.
+            {
+                continue;
+            }
+            if (field->arr[x_next][y_next].updated) // Wenn das Feld schon geupdated wurde
+            {
+                continue;
+            }
+            if (!isInField(field, x_next, y_next)) // Falls außer Spielfeld bricht ab
             {
                 field->lost = 1;
                 break;
             }
-            if (x == x_next && y == y_next) //Wenn die Position sich nicht ändert.
+            switch (field->arr[x_next][y_next].content)
             {
-                continue;
-            }
-
-            if (field->arr[x_next][y_next].content == Empty)
-            {
-                field->arr[x_next][y_next].content == field->arr[x][y].content;
+            case Food:
+            case Empty:
+                field->arr[x_next][y_next].content = field->arr[x][y].content;
                 field->arr[x][y].content = Empty;
-            }
-            else
-            {
+                field->arr[x_next][y_next].updated = true;
+                break;
+            default:
                 field->lost = 1;
+                break;
             }
+        }
+    }
+    for (int y = 0; y < field->height; y++)
+    {
+        for (int x = 0; x < field->width; x++)
+        {
+            field->arr[x][y].updated = false;
         }
     }
 }
@@ -184,7 +192,7 @@ int main(int argc, char const *argv[])
     printField(&spielfeld);
 
     spielfeld.arr[5][5].content = Snake_head;
-    spielfeld.arr[5][5].dx = -1;
+    spielfeld.arr[5][5].dx = 1;
 
     while (!spielfeld.lost)
     {
