@@ -14,6 +14,11 @@ enum content
     Food = '*',
     Empty = ' ',
 };
+struct position
+{
+    int x;
+    int y;
+};
 struct entity
 {
     enum content content;
@@ -43,6 +48,20 @@ struct field newField(int x, int y)
     }
     return ret;
 }
+struct position findFirst(struct field *field, enum content content)
+{
+    for (int y = 0; y < field->height; y++)
+    {
+        for (int x = 0; x < field->width; x++)
+        {
+            if (field->arr[x][y].content == content)
+            {
+                struct position pos = {.x = x, .y = y};
+                return pos;
+            }
+        }
+    }
+}
 bool isInField(struct field *field, int x, int y)
 {
     if (!(0 < x && x < field->width - 1))
@@ -55,47 +74,30 @@ bool isInField(struct field *field, int x, int y)
     }
     return 1;
 }
-void setDxDy(struct field *field, int dx, int dy)
-{
-    for (int y = 0; y < field->height; y++)
-    {
-        for (int x = 0; x < field->width; x++)
-        {
-            switch (field->arr[x][y].content)
-            {
-            case Snake_tail:
-                break;
-            case Snake_head:
-                field->arr[x][y].dx = dx;
-                field->arr[x][y].dy = dy;
-                break;
-            default:
-                break;
-            }
-        }
-    }
-}
 void getMove(struct field *field) // Read Input
 {
-    char input;
-    input = getchar();
-    switch (input)
+    struct position head = findFirst(field, Snake_head);
+    switch (getchar())
     {
     case 'w':
-        setDxDy(field, 0, -1);
+        field->arr[head.x][head.y].dx = 0;
+        field->arr[head.x][head.y].dy = -1;
         break;
     case 's':
-        setDxDy(field, 0, 1);
+        field->arr[head.x][head.y].dx = 0;
+        field->arr[head.x][head.y].dy = 1;
         break;
     case 'a':
-        setDxDy(field, -1, 0);
+        
+        field->arr[head.x][head.y].dx = -1;
+        field->arr[head.x][head.y].dy = 0;
         break;
     case 'd':
-        setDxDy(field, 1, 0);
+        field->arr[head.x][head.y].dx = 1;
+        field->arr[head.x][head.y].dy = 0;
         break;
     default:
         printf("\a"); // Piepst
-        return getMove(field);
         break;
     }
 }
@@ -134,25 +136,22 @@ void clearField(struct field *field) // clears Field without Borders
 }
 void createBorder(struct field *field) // Malt den Rand
 {
+    struct entity border = {
+        .content = Border,
+        .dx = 0,
+        .dy = 0,
+        .n = 0,
+        .updated = false,
+    };
     for (int x = 0; x < field->width; x++)
     {
-        field->arr[x][0].content = Border;
-        field->arr[x][0].dx = 0;
-        field->arr[x][0].dy = 0;
-
-        field->arr[x][field->height - 1].content = Border;
-        field->arr[x][field->height - 1].dx = 0;
-        field->arr[x][field->height - 1].dy = 0;
+        field->arr[x][0] = border;
+        field->arr[x][field->height - 1] = border;
     }
     for (int y = 0; y < field->height; y++)
     {
-        field->arr[0][y].content = Border;
-        field->arr[0][y].dx = 0;
-        field->arr[0][y].dy = 0;
-
-        field->arr[field->width - 1][y].content = Border;
-        field->arr[field->width - 1][y].dx = 0;
-        field->arr[field->width - 1][y].dy = 0;
+        field->arr[0][y] = border;
+        field->arr[field->width - 1][y] = border;
     }
 }
 void createRandomEntity(struct field *field, int n_max, enum content content)
@@ -172,25 +171,6 @@ void createRandomEntity(struct field *field, int n_max, enum content content)
         field->arr[r_x][r_y].content = content;
         field->arr[r_x][r_y].dx = 0;
         field->arr[r_x][r_y].dy = 0;
-    }
-}
-struct position
-{
-    int x;
-    int y;
-};
-struct position findFirst(struct field *field, enum content content)
-{
-    for (int y = 0; y < field->height; y++)
-    {
-        for (int x = 0; x < field->width; x++)
-        {
-            if (field->arr[x][y].content == content)
-            {
-                struct position pos = {.x = x, .y = y};
-                return pos;
-            }
-        }
     }
 }
 void moveSnake(struct field *field)
