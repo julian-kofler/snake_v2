@@ -174,81 +174,6 @@ void createRandomEntity(struct field *field, int n_max, enum content content)
         field->arr[r_x][r_y].dy = 0;
     }
 }
-void moveAll(struct field *field)
-{
-    for (int y = 1; y < field->height - 1; y++)
-    {
-        for (int x = 1; x < field->width - 1; x++)
-        {
-            int
-                x_next = x + field->arr[x][y].dx,
-                y_next = y + field->arr[x][y].dy;
-
-            if (x == x_next && y == y_next) // Wenn die Position sich nicht ändert.
-            {
-                continue;
-            }
-            if (field->arr[x_next][y_next].updated) // Wenn das Feld schon geupdated wurde
-            {
-                continue;
-            }
-            if (field->arr[x][y].updated)
-            {
-                continue;
-            }
-            if (!isInField(field, x_next, y_next)) // Falls außer Spielfeld bricht ab
-            {
-                field->lost = 1;
-                break;
-            }
-
-            switch (field->arr[x][y].content)
-            {
-            case Snake_head:
-                switch (field->arr[x_next][y_next].content)
-                {
-                case Empty:
-                    field->arr[x_next][y_next].content = field->arr[x][y].content;
-                    field->arr[x_next][y_next].dx = field->arr[x][y].dx;
-                    field->arr[x_next][y_next].dy = field->arr[x][y].dy;
-
-                    field->arr[x][y].content = Empty;
-                    field->arr[x][y].dx = 0;
-                    field->arr[x][y].dy = 0;
-
-                    field->arr[x_next][y_next].updated = true;
-                    break;
-                case Food:
-                    field->arr[x_next][y_next].content = field->arr[x][y].content;
-                    field->arr[x_next][y_next].dx = field->arr[x][y].dx;
-                    field->arr[x_next][y_next].dy = field->arr[x][y].dy;
-
-                    field->arr[x][y].content = Snake_tail;
-
-                    field->arr[x_next][y_next].updated = true;
-                    field->arr[x][y].updated = true;
-                    break;
-                default:
-                    field->lost = 1;
-                    break;
-                }
-                break;
-            case Snake_tail:
-
-                break;
-            default:
-                break;
-            }
-        }
-    }
-    for (int y = 0; y < field->height; y++)
-    {
-        for (int x = 0; x < field->width; x++)
-        {
-            field->arr[x][y].updated = false;
-        }
-    }
-}
 struct position
 {
     int x;
@@ -283,8 +208,12 @@ void moveSnake(struct field *field)
     if (field->arr[head_next.x][head_next.y].content == Food || field->arr[head_next.x][head_next.y].content == Empty)
     {
         field->arr[head_next.x][head_next.y].content = Snake_head;
-        int tailX = 0, tailY = 0, n = 0;
-        for (int y = 0; y < field->height; y++) // Findet letztes Stück Tail
+        field->arr[head_next.x][head_next.y].dx = field->arr[head_act.x][head_act.y].dx;
+        field->arr[head_next.x][head_next.y].dy = field->arr[head_act.x][head_act.y].dy;
+
+        bool tail_exist = false;
+        struct position tail_last = {0};
+        for (int y = 0, n = 0; y < field->height; y++) // Findet letztes Stück Tail
         {
             for (int x = 0; x < field->width; x++)
             {
@@ -296,46 +225,50 @@ void moveSnake(struct field *field)
                 {
                     continue;
                 }
-                n = field->arr[x][y].n;
-                tailX = x;
-                tailY = y;
-            }
-        }
-        if (n > 0)
-        {
-            field->arr[head_act.x][head_act.y].content = Snake_tail;
-            field->arr[head_act.x][head_act.y].n = 1;
-            field->arr[head_act.x][head_act.y].updated = true;
+                tail_exist = true;
 
-            for (int y = 0; y < field->height; y++)
-            {
-                for (int x = 0; x < field->width; x++)
-                {
-                    if (field->arr[x][y].content != Snake_tail)
-                    {
-                        continue;
-                    }
-                    if (field->arr[x][y].updated == true)
-                    {
-                        continue;
-                    }
-                    field->arr[x][y].n -= 1;
-                    field->arr[x][y].updated = true;
-                }
+                n = field->arr[x][y].n;
+                tail_last.x = x;
+                tail_last.y = y;
             }
         }
+        if (tail_exist == false)
+        {
+            tail_last = head_act;
+        }
+
+        field->arr[head_act.x][head_act.y].content = Snake_tail;
+        field->arr[head_act.x][head_act.y].n = 1;
+        field->arr[head_act.x][head_act.y].updated = true;
+
+        for (int y = 0; y < field->height; y++) // index des Tail anpassen (alles ist jetzt eins index höher)
+        {
+            for (int x = 0; x < field->width; x++)
+            {
+                if (field->arr[x][y].content != Snake_tail)
+                {
+                    continue;
+                }
+                if (field->arr[x][y].updated == true)
+                {
+                    continue;
+                }
+                field->arr[x][y].n += 1;
+                field->arr[x][y].updated = true;
+            }
+        }
+
         if (field->arr[head_next.x][head_next.y].content != Food)
         {
-            field->arr[tailX][tailY].content = Empty;
-            // field->arr[tailX][tailY].n = 0;
+            field->arr[tail_last.x][tail_last.y].content = Empty;
         }
     }
-    else
+    else // falls nächstes Feld weder Essen noch Frei -> spiel verloren
     {
         field->lost = 1;
     }
 
-    for (int y = 0; y < field->height; y++)
+    for (int y = 0; y < field->height; y++) // alle updated zurücksetzen
     {
         for (int x = 0; x < field->width; x++)
         {
@@ -349,11 +282,11 @@ int main(int argc, char const *argv[])
     clearField(&spielfeld);
     createBorder(&spielfeld);
     createRandomEntity(&spielfeld, 3, Food); // erschafft essen
-    printField(&spielfeld);
 
     spielfeld.arr[5][5].content = Snake_head;
     spielfeld.arr[5][5].dx = 1;
 
+    printField(&spielfeld);
     while (!spielfeld.lost)
     {
         if (kbhit())
@@ -364,7 +297,7 @@ int main(int argc, char const *argv[])
         moveSnake(&spielfeld);
 
         printField(&spielfeld);
-        usleep(500 * 1000); // 50 ms delay
+        usleep(250 * 1000); // ms delay
     }
 
     return 0;
