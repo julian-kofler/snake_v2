@@ -20,6 +20,7 @@ struct entity
     int dx; // geschwindigkeit in x-Richtung
     int dy; // geschwindigkeit in y-Richtung
     bool updated;
+    int n; // nummer des Schwanzstückes
 };
 struct field
 {
@@ -44,11 +45,11 @@ struct field newField(int x, int y)
 }
 bool isInField(struct field *field, int x, int y)
 {
-    if (!(0 < x && x < field->height - 1))
+    if (!(0 < x && x < field->width - 1))
     {
         return 0;
     }
-    if (!(0 < y && y < field->width - 1))
+    if (!(0 < y && y < field->height - 1))
     {
         return 0;
     }
@@ -100,11 +101,11 @@ void getMove(struct field *field) // Read Input
 }
 void printField(struct field *field) // Zeichnet das spielfeld
 {
-    system("clear");
-    int n = field->height * field->width + field->height + 1;
-    char *ausgabe = (char *)calloc(n, sizeof(char));
+    char *ausgabe = (char *)calloc(
+        field->height * field->width + field->height + 1,
+        sizeof(char));
 
-    int i=0;
+    int i = 0;
     for (int y = 0; y < field->height; y++)
     {
         for (int x = 0; x < field->width; x++)
@@ -113,7 +114,9 @@ void printField(struct field *field) // Zeichnet das spielfeld
         }
         ausgabe[i++] = '\n';
     }
-    printf("%s",ausgabe);
+    system("clear");
+    printf("%s", ausgabe);
+
     free(ausgabe);
 }
 void clearField(struct field *field) // clears Field without Borders
@@ -125,6 +128,7 @@ void clearField(struct field *field) // clears Field without Borders
             field->arr[x][y].content = Empty;
             field->arr[x][y].dx = 0;
             field->arr[x][y].dy = 0;
+            field->arr[x][y].n = 0;
         }
     }
 }
@@ -151,9 +155,24 @@ void createBorder(struct field *field) // Malt den Rand
         field->arr[field->width - 1][y].dy = 0;
     }
 }
-void createFood(struct field *field) // erschafft essen
+void createRandomEntity(struct field *field, int n_max, enum content content)
 {
-    field->arr[7][7].content = Food;
+    srand(time(0));
+    int n = n_max;
+    if (n_max > 1)
+    {
+        n = rand() % n_max;
+    }
+    for (int i = 0; i < n; i++)
+    {
+        int
+            r_x = (rand() % (field->width - 2)) + 1,
+            r_y = (rand() % (field->height - 2)) + 1;
+
+        field->arr[r_x][r_y].content = content;
+        field->arr[r_x][r_y].dx = 0;
+        field->arr[r_x][r_y].dy = 0;
+    }
 }
 void moveAll(struct field *field)
 {
@@ -230,13 +249,106 @@ void moveAll(struct field *field)
         }
     }
 }
+struct position
+{
+    int x;
+    int y;
+};
+struct position find(struct field *field, enum content content)
+{
+    for (int y = 0; y < field->height; y++)
+    {
+        for (int x = 0; x < field->width; x++)
+        {
+            if (field->arr[x][y].content == content)
+            {
+                struct position pos = {.x = x, .y = y};
+                return pos;
+            }
+        }
+    }
+}
+void moveSnake(struct field *field)
+{
+    struct position head_act = find(field, Snake_head);
+    struct position head_next = {
+        .x = head_act.x + field->arr[head_act.x][head_act.y].dx,
+        .y = head_act.y + field->arr[head_act.x][head_act.y].dy,
+    };
 
+    if (!isInField(field, head_next.x, head_next.y)) // Falls außer Spielfeld bricht ab
+    {
+        field->lost = 1;
+    }
+    if (field->arr[head_next.x][head_next.y].content == Food || field->arr[head_next.x][head_next.y].content == Empty)
+    {
+        field->arr[head_next.x][head_next.y].content = Snake_head;
+        int tailX = 0, tailY = 0, n = 0;
+        for (int y = 0; y < field->height; y++) // Findet letztes Stück Tail
+        {
+            for (int x = 0; x < field->width; x++)
+            {
+                if (field->arr[x][y].content != Snake_tail)
+                {
+                    continue;
+                }
+                if (field->arr[x][y].n < n)
+                {
+                    continue;
+                }
+                n = field->arr[x][y].n;
+                tailX = x;
+                tailY = y;
+            }
+        }
+        if (n > 0)
+        {
+            field->arr[head_act.x][head_act.y].content = Snake_tail;
+            field->arr[head_act.x][head_act.y].n = 1;
+            field->arr[head_act.x][head_act.y].updated = true;
+
+            for (int y = 0; y < field->height; y++)
+            {
+                for (int x = 0; x < field->width; x++)
+                {
+                    if (field->arr[x][y].content != Snake_tail)
+                    {
+                        continue;
+                    }
+                    if (field->arr[x][y].updated == true)
+                    {
+                        continue;
+                    }
+                    field->arr[x][y].n -= 1;
+                    field->arr[x][y].updated = true;
+                }
+            }
+        }
+        if (field->arr[head_next.x][head_next.y].content != Food)
+        {
+            field->arr[tailX][tailY].content = Empty;
+            // field->arr[tailX][tailY].n = 0;
+        }
+    }
+    else
+    {
+        field->lost = 1;
+    }
+
+    for (int y = 0; y < field->height; y++)
+    {
+        for (int x = 0; x < field->width; x++)
+        {
+            field->arr[x][y].updated = false;
+        }
+    }
+}
 int main(int argc, char const *argv[])
 {
     struct field spielfeld = newField(80, 15);
     clearField(&spielfeld);
     createBorder(&spielfeld);
-    createFood(&spielfeld);
+    createRandomEntity(&spielfeld, 3, Food); // erschafft essen
     printField(&spielfeld);
 
     spielfeld.arr[5][5].content = Snake_head;
@@ -248,8 +360,8 @@ int main(int argc, char const *argv[])
         {
             getMove(&spielfeld);
         }
-
-        moveAll(&spielfeld);
+        createRandomEntity(&spielfeld, 3, Food); // erschafft essen
+        moveSnake(&spielfeld);
 
         printField(&spielfeld);
         usleep(500 * 1000); // 50 ms delay
