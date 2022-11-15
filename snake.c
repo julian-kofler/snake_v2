@@ -205,67 +205,66 @@ void moveSnake(struct field *field)
     {
         field->lost = 1;
     }
-    if (field->arr[head_next.x][head_next.y].content == Food || field->arr[head_next.x][head_next.y].content == Empty)
-    {
-        enum content eatenFood = field->arr[head_next.x][head_next.y].content == Food? true : false;
-
-        field->arr[head_next.x][head_next.y] = field->arr[head_act.x][head_act.y];
-
-        bool tail_exist = false;
-        struct position tail_last = {0};
-        for (int y = 0, n = 0; y < field->height; y++) // Findet letztes Stück Tail
-        {
-            for (int x = 0; x < field->width; x++)
-            {
-                if (field->arr[x][y].content != Snake_tail)
-                {
-                    continue;
-                }
-                if (field->arr[x][y].n < n)
-                {
-                    continue;
-                }
-                tail_exist = true;
-
-                n = field->arr[x][y].n;
-                tail_last.x = x;
-                tail_last.y = y;
-            }
-        }
-        if (tail_exist == false)
-        {
-            tail_last = head_act;
-        }
-
-        field->arr[head_act.x][head_act.y].content = Snake_tail;
-        field->arr[head_act.x][head_act.y].n = 1;
-        field->arr[head_act.x][head_act.y].updated = true;
-
-        for (int y = 0; y < field->height; y++) // index des Tail anpassen (alles ist jetzt eins index höher)
-        {
-            for (int x = 0; x < field->width; x++)
-            {
-                if (field->arr[x][y].content != Snake_tail)
-                {
-                    continue;
-                }
-                if (field->arr[x][y].updated == true)
-                {
-                    continue;
-                }
-                field->arr[x][y].n += 1;
-                field->arr[x][y].updated = true;
-            }
-        }
-
-        if (eatenFood == false)
-        {
-            field->arr[tail_last.x][tail_last.y].content = Empty;
-        }
-    }
-    else // falls nächstes Feld weder Essen noch Frei -> spiel verloren
+    if (field->arr[head_next.x][head_next.y].content != Food && field->arr[head_next.x][head_next.y].content != Empty) // falls nächstes Feld weder Essen noch Frei -> spiel verloren
     {
         field->lost = 1;
+    }
+
+    bool eatenFood = field->arr[head_next.x][head_next.y].content == Food ? true : false; //hat schlange gerade etwas gegessen
+
+    field->arr[head_next.x][head_next.y] = field->arr[head_act.x][head_act.y]; //Kopf auf nächstes Feld setzen
+
+    bool tail_exist = false;
+    struct position tail_last = {0};
+    for (int y = 0, n = 0; y < field->height; y++) // Findet letztes Stück Tail
+    {
+        for (int x = 0; x < field->width; x++)
+        {
+            if (field->arr[x][y].content != Snake_tail)
+            {
+                continue;
+            }
+            if (field->arr[x][y].n < n)
+            {
+                continue;
+            }
+            tail_exist = true;
+
+            n = field->arr[x][y].n;
+            tail_last.x = x;
+            tail_last.y = y;
+        }
+    }
+    if (tail_exist == false)
+    {
+        tail_last = head_act; //wenn es noch kein Tail gibt ist die letzte Position des Kopfes leste Position des Tail
+    }
+
+    //Tail wird auf letzte Position des Kopf gesetzt
+    field->arr[head_act.x][head_act.y].content = Snake_tail;
+    field->arr[head_act.x][head_act.y].n = 1;
+    field->arr[head_act.x][head_act.y].updated = true;
+
+    for (int y = 0; y < field->height; y++) // index des Tail anpassen (alles ist jetzt eins index höher)
+    {
+        for (int x = 0; x < field->width; x++)
+        {
+            if (field->arr[x][y].content != Snake_tail)
+            {
+                continue;
+            }
+            if (field->arr[x][y].updated == true)
+            {
+                continue;
+            }
+            field->arr[x][y].n += 1;
+            field->arr[x][y].updated = true;
+        }
+    }
+
+    if (eatenFood == false)
+    {
+        field->arr[tail_last.x][tail_last.y].content = Empty; //Falls die Schlange nicht gegessen hat wird das letzte Stück tail gelöscht
     }
 
     for (int y = 0; y < field->height; y++) // alle updated zurücksetzen
