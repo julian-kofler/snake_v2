@@ -179,7 +179,7 @@ struct position
     int x;
     int y;
 };
-struct position find(struct field *field, enum content content)
+struct position findFirst(struct field *field, enum content content)
 {
     for (int y = 0; y < field->height; y++)
     {
@@ -195,7 +195,7 @@ struct position find(struct field *field, enum content content)
 }
 void moveSnake(struct field *field)
 {
-    struct position head_act = find(field, Snake_head);
+    struct position head_act = findFirst(field, Snake_head);
     struct position head_next = {
         .x = head_act.x + field->arr[head_act.x][head_act.y].dx,
         .y = head_act.y + field->arr[head_act.x][head_act.y].dy,
@@ -207,9 +207,9 @@ void moveSnake(struct field *field)
     }
     if (field->arr[head_next.x][head_next.y].content == Food || field->arr[head_next.x][head_next.y].content == Empty)
     {
-        field->arr[head_next.x][head_next.y].content = Snake_head;
-        field->arr[head_next.x][head_next.y].dx = field->arr[head_act.x][head_act.y].dx;
-        field->arr[head_next.x][head_next.y].dy = field->arr[head_act.x][head_act.y].dy;
+        enum content eatenFood = field->arr[head_next.x][head_next.y].content == Food? true : false;
+
+        field->arr[head_next.x][head_next.y] = field->arr[head_act.x][head_act.y];
 
         bool tail_exist = false;
         struct position tail_last = {0};
@@ -258,7 +258,7 @@ void moveSnake(struct field *field)
             }
         }
 
-        if (field->arr[head_next.x][head_next.y].content != Food)
+        if (eatenFood == false)
         {
             field->arr[tail_last.x][tail_last.y].content = Empty;
         }
@@ -297,7 +297,7 @@ int main(int argc, char const *argv[])
         moveSnake(&spielfeld);
 
         printField(&spielfeld);
-        usleep(250 * 1000); // ms delay
+        usleep(150 * 1000); // ms delay
     }
 
     return 0;
